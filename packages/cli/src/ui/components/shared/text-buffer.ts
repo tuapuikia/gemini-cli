@@ -1280,8 +1280,6 @@ export function useTextBuffer({
       else if (key['end']) move('end');
       else if (key['ctrl'] && input === 'e') move('end');
       else if (key['ctrl'] && input === 'w') deleteWordLeft();
-      // Specific multi-byte sequence for forward delete.
-      else if (input === '\x1b[3~') del();
       else if (
         (key['meta'] || key['ctrl'] || key['alt']) &&
         (key['backspace'] || input === '\x7f')
@@ -1289,14 +1287,13 @@ export function useTextBuffer({
         deleteWordLeft();
       else if ((key['meta'] || key['ctrl'] || key['alt']) && key['delete'])
         deleteWordRight();
-      // `key.backspace` is for `\b` (and ctrl+h). `\x7f` is for macOS backspace.
       else if (
         key['backspace'] ||
         input === '\x7f' ||
-        (key['ctrl'] && input === 'h')
+        (key['ctrl'] && input === 'h') ||
+        (key['delete'] && !key['shift'])
       )
         backspace();
-      // `key.delete` is a fallback for other terminals. `ctrl+d` is a standard binding.
       else if (key['delete'] || (key['ctrl'] && input === 'd')) del();
       else if (input && !key['ctrl'] && !key['meta']) {
         insert(input);
