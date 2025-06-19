@@ -1290,8 +1290,7 @@ export function useTextBuffer({
       else if (
         key['backspace'] ||
         input === '\x7f' ||
-        (key['ctrl'] && input === 'h') ||
-        (key['delete'] && !key['shift'])
+        (key['ctrl'] && input === 'h')
       )
         backspace();
       else if (key['delete'] || (key['ctrl'] && input === 'd')) del();
