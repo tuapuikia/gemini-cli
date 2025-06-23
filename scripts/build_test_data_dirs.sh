@@ -16,16 +16,18 @@ Options:
   --num_files        The number of files to create in each directory. (Default: 10)
   --num_dirs         The number of subdirectories to create in each directory. (Default: 10)
   --hidden_filename  The name of the file to hide in one of the deepest directories. (Default: "needle.txt")
+  --fast             Use a faster, tar-based generation method. In this mode, max_depth must be a power of two (1, 2, 4, or 8).
   --help             Display this help message and exit.
 EOF
 }
 
 # --- Argument Parsing with Defaults ---
 ROOT_DIR="haystack"
-MAX_DEPTH=3
+MAX_DEPTH=4
 NUM_FILES=10
 NUM_DIRS=10
 HIDDEN_FILENAME="needle.txt"
+FAST_MODE=false
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -48,6 +50,10 @@ while [ "$#" -gt 0 ]; do
         --hidden_filename)
             HIDDEN_FILENAME="$2"
             shift 2
+            ;;
+        --fast)
+            FAST_MODE=true
+            shift
             ;;
         --help)
             show_help
@@ -126,7 +132,7 @@ update_progress() {
 }
 
 # Recursively builds the directory and file structure.
-build_haystack_recursive() {
+build_haystack_slow_recursive() {
     local current_dir="$1"
     local current_depth="$2"
 
@@ -150,13 +156,21 @@ build_haystack_recursive() {
         update_progress "$ITEMS_CREATED"
 
         for dir in "${dir_paths[@]}"; do
-            build_haystack_recursive "$dir" "$((current_depth + 1))"
+            build_haystack_slow_recursive "$dir" "$((current_depth + 1))"
         done
     fi
 }
 
 # Main function to build the "haystack".
 build_haystack() {
+    if [ "$FAST_MODE" = true ]; then
+        build_haystack_fast
+    else
+        build_haystack_slow
+    fi
+}
+
+build_haystack_slow() {
     echo "Building haystack in '$ROOT_DIR'..."
     START_TIME=$(date +%s)
     
@@ -169,11 +183,81 @@ build_haystack() {
     mkdir -p "$ROOT_DIR"
     ITEMS_CREATED=$((ITEMS_CREATED + 1))
     
-    build_haystack_recursive "$ROOT_DIR" 0
+    build_haystack_slow_recursive "$ROOT_DIR" 0
     
     # Final progress update to show 100%
     update_progress "$TOTAL_ITEMS"
     echo # Newline after progress bar
+    echo "Haystack built successfully."
+}
+
+build_haystack_fast() {
+    echo "Building haystack in '$ROOT_DIR' (fast mode)..."
+    START_TIME=$(date +%s)
+
+    # Validate max_depth
+    if [[ ! "$MAX_DEPTH" =~ ^(1|2|4|8)$ ]]; then
+        echo "Error: In --fast mode, --max_depth must be a power of two (1, 2, 4, or 8)."
+        exit 1
+    fi
+
+    # Clean up previous runs
+    if [ -d "$ROOT_DIR" ]; then
+        echo "Removing existing '$ROOT_DIR' directory..."
+        rm -rf "$ROOT_DIR"
+    fi
+    mkdir -p "$ROOT_DIR"
+
+    local temp_dir="./temp_build_data"
+    mkdir -p "$temp_dir"
+
+    echo "Creating template structure..."
+    # Create template directories
+    local template_dirs=()
+    for i in $(seq 1 "$NUM_DIRS"); do
+        template_dirs+=("$temp_dir/$(generate_random_name)")
+    done
+    mkdir -p "${template_dirs[@]}"
+
+    # Create files in each of the template directories
+    for dir in "${template_dirs[@]}"; do
+        local template_files=()
+        for i in $(seq 1 "$NUM_FILES"); do
+            template_files+=("$dir/$(generate_random_name).txt")
+        done
+        touch "${template_files[@]}"
+    done
+
+    # Create files in the top-level of the template directory
+    local top_level_files=()
+    for i in $(seq 1 "$NUM_FILES"); do
+        top_level_files+=("$temp_dir/$(generate_random_name).txt")
+    done
+    touch "${top_level_files[@]}"
+
+    echo "Creating initial tarball..."
+    tar -cf "structure.tar" -C "$temp_dir" .
+
+    echo "Expanding to depth 1..."
+    tar -xf "structure.tar" -C "$ROOT_DIR"
+
+    local current_depth=1
+    while [ "$current_depth" -lt "$MAX_DEPTH" ]; do
+        local next_depth=$((current_depth * 2))
+        echo "Expanding to depth $next_depth..."
+        
+        # Create a new tarball of the current structure
+        tar -cf "structure_depth_${current_depth}.tar" -C "$ROOT_DIR" .
+        
+        # Find all leaf directories and expand the new tarball into them
+        find "$ROOT_DIR" -mindepth "$current_depth" -maxdepth "$current_depth" -type d | while read -r dir; do
+            tar -xf "structure_depth_${current_depth}.tar" -C "$dir"
+        done
+        
+        rm "structure_depth_${current_depth}.tar"
+        current_depth=$next_depth
+    done
+
     echo "Haystack built successfully."
 }
 
@@ -182,13 +266,13 @@ hide_needle() {
     echo "Hiding needle ('$HIDDEN_FILENAME')..."
     
     local current_dir="$ROOT_DIR"
-    for (( i=0; i<MAX_DEPTH; i++ )); do
+    while true; do
         # Find subdirectories in the current directory
         local subdirs=("$current_dir"/*/)
         local num_subdirs=${#subdirs[@]}
 
-        if [ "$num_subdirs" -eq 0 ]; then
-            echo "Warning: No subdirectories found at depth $i. Placing needle here."
+        if [ "$num_subdirs" -eq 0 ] || [ ! -d "${subdirs[0]}" ]; then
+            # No more subdirectories, so we've reached a leaf
             break
         fi
         
@@ -205,6 +289,10 @@ hide_needle() {
 }
 
 # --- Main Execution ---
+
+if [ "$FAST_MODE" = true ]; then
+    trap 'rm -rf "./temp_build_data" "structure.tar"' EXIT
+fi
 
 echo "--- Filesystem Test Data Generator ---"
 calculate_totals
