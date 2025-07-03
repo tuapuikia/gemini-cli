@@ -444,6 +444,26 @@ export async function start_sandbox(
     }
   }
 
+  // mount docker socket if SANDBOX_MOUNT_DOCKER_SOCK is set
+  if (
+    ['true', '1'].includes(
+      (process.env.SANDBOX_MOUNT_DOCKER_SOCK ?? 'false').toLowerCase(),
+    )
+  ) {
+    const dockerSock = '/var/run/docker.sock';
+    if (fs.existsSync(dockerSock)) {
+      console.warn(
+        'WARNING: mounting docker socket into sandbox. ' +
+          'This is a security risk if you do not trust the code running in the sandbox.',
+      );
+      args.push('--volume', `${dockerSock}:${dockerSock}`);
+    } else {
+      console.warn(
+        `WARNING: SANDBOX_MOUNT_DOCKER_SOCK is set, but '${dockerSock}' does not exist.`,
+      );
+    }
+  }
+
   // expose env-specified ports on the sandbox
   ports().forEach((p) => args.push('--publish', `${p}:${p}`));
 
