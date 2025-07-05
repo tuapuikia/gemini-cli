@@ -464,13 +464,26 @@ export async function start_sandbox(
     }
   }
 
-  // expose env-specified ports on the sandbox
-  ports().forEach((p) => args.push('--publish', `${p}:${p}`));
+  // mount to host network if SANDBOX_DOCKER_HOST_NETWORK is set
+  const mountToHostNetwork = ['true', '1'].includes(
+    (process.env.SANDBOX_DOCKER_HOST_NETWORK ?? 'false').toLowerCase(),
+  );
 
-  // if DEBUG is set, expose debugging port
-  if (process.env.DEBUG) {
-    const debugPort = process.env.DEBUG_PORT || '9229';
-    args.push(`--publish`, `${debugPort}:${debugPort}`);
+  if (mountToHostNetwork) {
+    console.warn(
+      'WARNING: mounting to host network. ' +
+        'This is a security risk if you do not trust the code running in the sandbox.',
+    );
+    args.push('--network', 'host');
+  } else {
+    // expose env-specified ports on the sandbox
+    ports().forEach((p) => args.push('--publish', `${p}:${p}`));
+
+    // if DEBUG is set, expose debugging port
+    if (process.env.DEBUG) {
+      const debugPort = process.env.DEBUG_PORT || '9229';
+      args.push(`--publish`, `${debugPort}:${debugPort}`);
+    }
   }
 
   // copy proxy environment variables, replacing localhost with SANDBOX_PROXY_NAME
@@ -499,7 +512,7 @@ export async function start_sandbox(
     }
 
     // if using proxy, switch to internal networking through proxy
-    if (proxy) {
+    if (proxy && !mountToHostNetwork) {
       execSync(
         `${config.command} network inspect ${SANDBOX_NETWORK_NAME} || ${config.command} network create --internal ${SANDBOX_NETWORK_NAME}`,
       );
