@@ -394,13 +394,19 @@ export async function start_sandbox(
   // mount os.tmpdir() as os.tmpdir() inside container
   args.push('--volume', `${os.tmpdir()}:${getContainerPath(os.tmpdir())}`);
 
-  // mount gcloud config directory if it exists
-  const gcloudConfigDir = path.join(os.homedir(), '.config', 'gcloud');
-  if (fs.existsSync(gcloudConfigDir)) {
-    args.push(
-      '--volume',
-      `${gcloudConfigDir}:${getContainerPath(gcloudConfigDir)}:ro`,
-    );
+  // mount gcloud config directory if SANDBOX_MOUNT_GCLOUD_CONFIG is true
+  if (
+    ['true', '1'].includes(
+      (process.env.SANDBOX_MOUNT_GCLOUD_CONFIG ?? 'false').toLowerCase(),
+    )
+  ) {
+    const gcloudConfigDir = path.join(os.homedir(), '.config', 'gcloud');
+    if (fs.existsSync(gcloudConfigDir)) {
+      args.push(
+        '--volume',
+        `${gcloudConfigDir}:${getContainerPath(gcloudConfigDir)}:ro`,
+      );
+    }
   }
 
   // mount ADC file if GOOGLE_APPLICATION_CREDENTIALS is set
