@@ -57,7 +57,7 @@ interface CliArgs {
 }
 
 async function parseArguments(): Promise<CliArgs> {
-  const argv = await yargs(hideBin(process.argv))
+  const yargsInstance = yargs(hideBin(process.argv))
     .scriptName('gemini')
     .usage(
       '$0 [options]',
@@ -178,9 +178,11 @@ async function parseArguments(): Promise<CliArgs> {
     .alias('v', 'version')
     .help()
     .alias('h', 'help')
-    .strict().argv;
+    .strict();
 
-  return argv;
+  yargsInstance.wrap(yargsInstance.terminalWidth());
+
+  return yargsInstance.argv;
 }
 
 // This function is now a thin wrapper around the server's implementation.
