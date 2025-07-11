@@ -175,6 +175,7 @@ async function parseArguments(): Promise<CliArgs> {
       type: 'boolean',
       description: 'List all available extensions and exit.',
     })
+
     .version(await getCliVersion()) // This will enable the --version flag based on package.json
     .alias('v', 'version')
     .help()
@@ -323,6 +324,7 @@ export async function loadCliConfig(
       name: e.config.name,
       version: e.config.version,
     })),
+    noBrowser: !!process.env.NO_BROWSER,
   });
 }
 
