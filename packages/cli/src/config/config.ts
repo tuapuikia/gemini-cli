@@ -34,13 +34,14 @@ const logger = {
   error: (...args: any[]) => console.error('[ERROR]', ...args),
 };
 
-interface CliArgs {
+export interface CliArgs {
   model: string | undefined;
   embeddingModel: string | undefined;
   sandbox: boolean | string | undefined;
   sandboxImage: string | undefined;
   debug: boolean | undefined;
   prompt: string | undefined;
+  promptInteractive: string | undefined;
   allFiles: boolean | undefined;
   all_files: boolean | undefined;
   showMemoryUsage: boolean | undefined;
@@ -56,7 +57,7 @@ interface CliArgs {
   listExtensions: boolean | undefined;
 }
 
-async function parseArguments(): Promise<CliArgs> {
+export async function parseArguments(): Promise<CliArgs> {
   const yargsInstance = yargs(hideBin(process.argv))
     .scriptName('gemini')
     .usage(
@@ -79,6 +80,12 @@ async function parseArguments(): Promise<CliArgs> {
       alias: 'p',
       type: 'string',
       description: 'Prompt. Appended to input on stdin (if any).',
+    })
+    .option('prompt-interactive', {
+      alias: 'i',
+      type: 'string',
+      description:
+        'Execute the provided prompt and continue in interactive mode',
     })
     .option('sandbox', {
       alias: 's',
@@ -180,10 +187,17 @@ async function parseArguments(): Promise<CliArgs> {
     .alias('v', 'version')
     .help()
     .alias('h', 'help')
-    .strict();
+    .strict()
+    .check((argv) => {
+      if (argv.prompt && argv.promptInteractive) {
+        throw new Error(
+          'Cannot use both --prompt (-p) and --prompt-interactive (-i) together',
+        );
+      }
+      return true;
+    });
 
   yargsInstance.wrap(yargsInstance.terminalWidth());
-
   return yargsInstance.argv;
 }
 
@@ -215,8 +229,8 @@ export async function loadCliConfig(
   settings: Settings,
   extensions: Extension[],
   sessionId: string,
+  argv: CliArgs,
 ): Promise<Config> {
-  const argv = await parseArguments();
   const debugMode =
     argv.debug ||
     [process.env.DEBUG, process.env.DEBUG_MODE].some(
@@ -274,7 +288,7 @@ export async function loadCliConfig(
     sandbox: sandboxConfig,
     targetDir: process.cwd(),
     debugMode,
-    question: argv.prompt || '',
+    question: argv.promptInteractive || argv.prompt || '',
     fullContext: argv.allFiles || argv.all_files || false,
     coreTools: settings.coreTools || undefined,
     excludeTools,
