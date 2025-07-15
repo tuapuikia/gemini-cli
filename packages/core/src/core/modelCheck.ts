@@ -28,14 +28,12 @@ export async function getEffectiveModel(
 
   const modelToTest = DEFAULT_GEMINI_MODEL;
   const fallbackModel = DEFAULT_GEMINI_FLASH_MODEL;
-<<<<<<< HEAD
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent`;
   const thinkingBudgetStr = process.env.GEMINI_THINKING_BUDGET;
   const thinkingBudget =
     thinkingBudgetStr && /^\d+$/.test(thinkingBudgetStr)
       ? parseInt(thinkingBudgetStr, 10)
       : 128;
->>>>>>> origin/main
   const body = JSON.stringify({
     contents: [{ parts: [{ text: 'test' }] }],
     generationConfig: {
