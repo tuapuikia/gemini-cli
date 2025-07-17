@@ -150,6 +150,7 @@ export interface ConfigParameters {
   noBrowser?: boolean;
   summarizeToolOutput?: Record<string, SummarizeToolOutputSettings>;
   ideMode?: boolean;
+  disableFallbackMode?: boolean;
 }
 
 export class Config {
@@ -194,6 +195,7 @@ export class Config {
   private readonly maxSessionTurns: number;
   private readonly listExtensions: boolean;
   private readonly _activeExtensions: ActiveExtension[];
+  private readonly disableFallbackMode: boolean;
   flashFallbackHandler?: FlashFallbackHandler;
   private quotaErrorOccurred: boolean = false;
   private readonly summarizeToolOutput:
@@ -246,6 +248,9 @@ export class Config {
     this.noBrowser = params.noBrowser ?? false;
     this.summarizeToolOutput = params.summarizeToolOutput;
     this.ideMode = params.ideMode ?? false;
+    this.disableFallbackMode = !(
+      process.env.GEMINI_FALLBACK_MODE?.toLowerCase() === 'false'
+    );
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -514,6 +519,10 @@ export class Config {
 
   getIdeMode(): boolean {
     return this.ideMode;
+  }
+
+  getDisableFallbackMode(): boolean {
+    return this.disableFallbackMode;
   }
 
   async getGitService(): Promise<GitService> {

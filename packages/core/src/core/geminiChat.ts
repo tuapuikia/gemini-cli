@@ -208,6 +208,10 @@ export class GeminiChat {
     authType?: string,
     error?: unknown,
   ): Promise<string | null> {
+    if (this.config.getDisableFallbackMode()) {
+      return null;
+    }
+
     // Only handle fallback for OAuth users
     if (authType !== AuthType.LOGIN_WITH_GOOGLE) {
       return null;

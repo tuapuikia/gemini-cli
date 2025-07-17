@@ -77,7 +77,8 @@ export async function parseArguments(): Promise<CliArgs> {
       alias: 'e',
       type: 'string',
       description: `Embedding Model`,
-      default: process.env.GEMINI_EMBEDDING_MODEL || DEFAULT_GEMINI_EMBEDDING_MODEL,
+      default:
+        process.env.GEMINI_EMBEDDING_MODEL || DEFAULT_GEMINI_EMBEDDING_MODEL,
     })
     .option('prompt', {
       alias: 'p',
