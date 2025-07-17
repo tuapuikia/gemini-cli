@@ -39,3 +39,4 @@ packages/*/coverage/
 packages/cli/src/generated/
 .integration-tests/
 .npm-cache
+packages/vscode-ide-companion/*.vsix
