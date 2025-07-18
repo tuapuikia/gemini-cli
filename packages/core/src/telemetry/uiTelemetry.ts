@@ -36,6 +36,7 @@ export interface ToolCallStats {
 }
 
 export interface ModelMetrics {
+  modelName: string;
   api: {
     totalRequests: number;
     totalErrors: number;
@@ -67,7 +68,8 @@ export interface SessionMetrics {
   };
 }
 
-const createInitialModelMetrics = (): ModelMetrics => ({
+const createInitialModelMetrics = (modelName: string): ModelMetrics => ({
+  modelName,
   api: {
     totalRequests: 0,
     totalErrors: 0,
@@ -143,13 +145,14 @@ export class UiTelemetryService extends EventEmitter {
 
   private getOrCreateModelMetrics(modelName: string): ModelMetrics {
     if (!this.#metrics.models[modelName]) {
-      this.#metrics.models[modelName] = createInitialModelMetrics();
+      this.#metrics.models[modelName] = createInitialModelMetrics(modelName);
     }
     return this.#metrics.models[modelName];
   }
 
   private processApiResponse(event: ApiResponseEvent) {
     const modelMetrics = this.getOrCreateModelMetrics(event.model);
+    modelMetrics.modelName = event.model;
 
     modelMetrics.api.totalRequests++;
     modelMetrics.api.totalLatencyMs += event.duration_ms;

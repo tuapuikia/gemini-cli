@@ -9,10 +9,16 @@ import { StatsDisplay } from './StatsDisplay.js';
 
 interface SessionSummaryDisplayProps {
   duration: string;
+  totalCost?: number;
 }
 
 export const SessionSummaryDisplay: React.FC<SessionSummaryDisplayProps> = ({
   duration,
+  totalCost,
 }) => (
-  <StatsDisplay title="Agent powering down. Goodbye!" duration={duration} />
+  <StatsDisplay
+    title="Agent powering down. Goodbye!"
+    duration={duration}
+    totalCost={totalCost}
+  />
 );

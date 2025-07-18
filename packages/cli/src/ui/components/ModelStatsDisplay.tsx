@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { Colors } from '../colors.js';
 import { formatDuration } from '../utils/formatters.js';
 import {
@@ -14,6 +15,7 @@ import {
   calculateErrorRate,
 } from '../utils/computeStats.js';
 import { useSessionStats, ModelMetrics } from '../contexts/SessionContext.js';
+import { calculateModelCost } from '../../utils/pricing.js';
 
 const METRIC_COL_WIDTH = 28;
 const MODEL_COL_WIDTH = 22;
@@ -191,6 +193,22 @@ export const ModelStatsDisplay: React.FC = () => {
         title="Output"
         isSubtle
         values={getModelValues((m) => m.tokens.candidates.toLocaleString())}
+      />
+      <StatRow
+        title="Prompt Cost"
+        isSubtle
+        values={getModelValues((m) => {
+          const cost = calculateModelCost(m);
+          return `${cost.toFixed(6)}`;
+        })}
+      />
+      <StatRow
+        title="Output Cost"
+        isSubtle
+        values={getModelValues((m) => {
+          const cost = calculateModelCost(m);
+          return `${cost.toFixed(6)}`;
+        })}
       />
     </Box>
   );

@@ -10,6 +10,7 @@ import Gradient from 'ink-gradient';
 import { Colors } from '../colors.js';
 import { formatDuration } from '../utils/formatters.js';
 import { useSessionStats, ModelMetrics } from '../contexts/SessionContext.js';
+import { calculateModelCost } from '../../utils/pricing.js';
 import {
   getStatusColor,
   TOOL_SUCCESS_RATE_HIGH,
@@ -142,6 +143,7 @@ const ModelUsageTable: React.FC<{
 interface StatsDisplayProps {
   duration: string;
   title?: string;
+  totalCost?: number;
 }
 
 export const StatsDisplay: React.FC<StatsDisplayProps> = ({
@@ -152,6 +154,11 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   const { metrics } = stats;
   const { models, tools } = metrics;
   const computed = computeSessionStats(metrics);
+
+  let totalCost = 0;
+  Object.values(models).forEach((m) => {
+    totalCost += calculateModelCost(m);
+  });
 
   const successThresholds = {
     green: TOOL_SUCCESS_RATE_HIGH,
@@ -246,6 +253,14 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           </Text>
         </SubStatRow>
       </Section>
+
+      {totalCost !== undefined && (
+        <Section title="Estimated Cost">
+          <StatRow title="Total API Cost:">
+            <Text color={Colors.AccentYellow}>${totalCost.toFixed(6)}</Text>
+          </StatRow>
+        </Section>
+      )}
 
       {Object.keys(models).length > 0 && (
         <ModelUsageTable
