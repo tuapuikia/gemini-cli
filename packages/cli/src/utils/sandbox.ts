@@ -479,12 +479,21 @@ export async function start_sandbox(
     args.push(`--publish`, `${debugPort}:${debugPort}`);
   }
 
+  // if SANDBOX_DOCKER_HOST_NETWORK is set, use host network
+  const useHostNetwork = ['true', '1'].includes(
+    (process.env.SANDBOX_DOCKER_HOST_NETWORK ?? 'false').toLowerCase(),
+  );
+  if (useHostNetwork) {
+    console.error('INFO: Using host network for sandbox.');
+    args.push('--network', 'host');
+  }
+
   // copy proxy environment variables, replacing localhost with SANDBOX_PROXY_NAME
   // copy as both upper-case and lower-case as is required by some utilities
   // GEMINI_SANDBOX_PROXY_COMMAND implies HTTPS_PROXY unless HTTP_PROXY is set
   const proxyCommand = process.env.GEMINI_SANDBOX_PROXY_COMMAND;
 
-  if (proxyCommand) {
+  if (proxyCommand && !useHostNetwork) {
     let proxy =
       process.env.HTTPS_PROXY ||
       process.env.https_proxy ||
