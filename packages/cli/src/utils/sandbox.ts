@@ -394,13 +394,19 @@ export async function start_sandbox(
   // mount os.tmpdir() as os.tmpdir() inside container
   args.push('--volume', `${os.tmpdir()}:${getContainerPath(os.tmpdir())}`);
 
-  // mount gcloud config directory if it exists
-  const gcloudConfigDir = path.join(os.homedir(), '.config', 'gcloud');
-  if (fs.existsSync(gcloudConfigDir)) {
-    args.push(
-      '--volume',
-      `${gcloudConfigDir}:${getContainerPath(gcloudConfigDir)}:ro`,
-    );
+  // mount gcloud config directory if SANDBOX_MOUNT_GCLOUD_CONFIG is true
+  if (
+    ['true', '1'].includes(
+      (process.env.SANDBOX_MOUNT_GCLOUD_CONFIG ?? 'false').toLowerCase(),
+    )
+  ) {
+    const gcloudConfigDir = path.join(os.homedir(), '.config', 'gcloud');
+    if (fs.existsSync(gcloudConfigDir)) {
+      args.push(
+        '--volume',
+        `${gcloudConfigDir}:${getContainerPath(gcloudConfigDir)}:ro`,
+      );
+    }
   }
 
   // mount ADC file if GOOGLE_APPLICATION_CREDENTIALS is set
@@ -441,6 +447,26 @@ export async function start_sandbox(
         console.error(`SANDBOX_MOUNTS: ${from} -> ${to} (${opts})`);
         args.push('--volume', mount);
       }
+    }
+  }
+
+  // mount docker socket if SANDBOX_MOUNT_DOCKER_SOCK is set
+  if (
+    ['true', '1'].includes(
+      (process.env.SANDBOX_MOUNT_DOCKER_SOCK ?? 'false').toLowerCase(),
+    )
+  ) {
+    const dockerSock = '/var/run/docker.sock';
+    if (fs.existsSync(dockerSock)) {
+      console.warn(
+        'WARNING: mounting docker socket into sandbox. ' +
+          'This is a security risk if you do not trust the code running in the sandbox.',
+      );
+      args.push('--volume', `${dockerSock}:${dockerSock}`);
+    } else {
+      console.warn(
+        `WARNING: SANDBOX_MOUNT_DOCKER_SOCK is set, but '${dockerSock}' does not exist.`,
+      );
     }
   }
 

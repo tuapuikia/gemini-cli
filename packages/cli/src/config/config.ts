@@ -38,6 +38,7 @@ const logger = {
 
 export interface CliArgs {
   model: string | undefined;
+  embeddingModel: string | undefined;
   sandbox: boolean | string | undefined;
   sandboxImage: string | undefined;
   debug: boolean | undefined;
@@ -73,6 +74,13 @@ export async function parseArguments(): Promise<CliArgs> {
       type: 'string',
       description: `Model`,
       default: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+    })
+    .option('embedding-model', {
+      alias: 'e',
+      type: 'string',
+      description: `Embedding Model`,
+      default:
+        process.env.GEMINI_EMBEDDING_MODEL || DEFAULT_GEMINI_EMBEDDING_MODEL,
     })
     .option('prompt', {
       alias: 'p',
@@ -370,7 +378,7 @@ export async function loadCliConfig(
 
   return new Config({
     sessionId,
-    embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
+    embeddingModel: argv.embeddingModel!,
     sandbox: sandboxConfig,
     targetDir: process.cwd(),
     debugMode,
