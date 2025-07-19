@@ -144,12 +144,16 @@ interface StatsDisplayProps {
   duration: string;
   title?: string;
   totalCost?: number;
+  totalPromptCost?: number;
+  totalOutputCost?: number;
 }
 
 export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   duration,
   title,
   totalCost,
+  totalPromptCost,
+  totalOutputCost,
 }) => {
   const { stats } = useSessionStats();
   const { metrics } = stats;
@@ -250,11 +254,23 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         </SubStatRow>
       </Section>
 
-      {totalCost !== undefined && (
+      {(totalCost !== undefined || totalPromptCost !== undefined || totalOutputCost !== undefined) && (
         <Section title="Estimated Cost">
-          <StatRow title="Total API Cost:">
-            <Text color={Colors.AccentYellow}>${totalCost.toFixed(6)}</Text>
-          </StatRow>
+          {totalPromptCost !== undefined && (
+            <StatRow title="Prompt Cost:">
+              <Text color={Colors.AccentYellow}>${totalPromptCost.toFixed(6)}</Text>
+            </StatRow>
+          )}
+          {totalOutputCost !== undefined && (
+            <StatRow title="Output Cost:">
+              <Text color={Colors.AccentYellow}>${totalOutputCost.toFixed(6)}</Text>
+            </StatRow>
+          )}
+          {totalCost !== undefined && (
+            <StatRow title="Total API Cost:">
+              <Text color={Colors.AccentYellow}>${totalCost.toFixed(6)}</Text>
+            </StatRow>
+          )}
         </Section>
       )}
 

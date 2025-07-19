@@ -15,7 +15,7 @@ import {
   calculateErrorRate,
 } from '../utils/computeStats.js';
 import { useSessionStats, ModelMetrics } from '../contexts/SessionContext.js';
-import { calculateModelCost } from '../../utils/pricing.js';
+import { calculateModelCost, calculatePromptCost, calculateOutputCost } from '../../utils/pricing.js';
  
 const METRIC_COL_WIDTH = 28;
 const MODEL_COL_WIDTH = 22;
@@ -198,7 +198,7 @@ export const ModelStatsDisplay: React.FC = () => {
         title="Prompt Cost"
         isSubtle
         values={getModelValues((m) => {
-          const cost = calculateModelCost(m);
+          const cost = calculatePromptCost(m);
           return `${cost.toFixed(6)}`;
         })}
       />
@@ -206,8 +206,18 @@ export const ModelStatsDisplay: React.FC = () => {
         title="Output Cost"
         isSubtle
         values={getModelValues((m) => {
-          const cost = calculateModelCost(m);
+          const cost = calculateOutputCost(m);
           return `${cost.toFixed(6)}`;
+        })}
+      />
+      <StatRow
+        title="Total estimated cost"
+        isSubtle
+        values={getModelValues((m) => {
+          const promptCost = calculatePromptCost(m);
+          const outputCost = calculateOutputCost(m);
+          const totalCost = promptCost + outputCost;
+          return `${totalCost.toFixed(6)}`;
         })}
       />
     </Box>

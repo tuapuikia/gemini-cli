@@ -114,6 +114,8 @@ export type HistoryItemQuit = HistoryItemBase & {
   type: 'quit';
   duration: string;
   totalCost?: number;
+  totalPromptCost?: number;
+  totalOutputCost?: number;
 };
 
 export type HistoryItemToolGroup = HistoryItemBase & {
@@ -204,6 +206,9 @@ export type Message =
       type: MessageType.QUIT;
       timestamp: Date;
       duration: string;
+      totalCost?: number;
+      totalPromptCost?: number;
+      totalOutputCost?: number;
       content?: string;
     }
   | {

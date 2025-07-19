@@ -5,7 +5,7 @@
  */
 
 import { formatDuration } from '../utils/formatters.js';
-import { calculateModelCost } from '../../utils/pricing.js';
+import { calculateModelCost, calculatePromptCost, calculateOutputCost } from '../../utils/pricing.js';
 import { type SlashCommand } from './types.js';
 
 export const quitCommand: SlashCommand = {
@@ -18,9 +18,11 @@ export const quitCommand: SlashCommand = {
     const wallDuration = now - sessionStartTime.getTime();
 
     let totalCost = 0;
+    let totalPromptCost = 0;
+    let totalOutputCost = 0;
     for (const modelName in metrics.models) {
       const m = metrics.models[modelName];
-      totalCost += calculateModelCost({
+      const modelMetrics = {
         modelName,
         api: {
           totalRequests: m.api.totalRequests,
@@ -28,7 +30,10 @@ export const quitCommand: SlashCommand = {
           totalLatencyMs: m.api.totalLatencyMs,
         },
         tokens: m.tokens,
-      });
+      };
+      totalCost += calculateModelCost(modelMetrics);
+      totalPromptCost += calculatePromptCost(modelMetrics);
+      totalOutputCost += calculateOutputCost(modelMetrics);
     }
 
     return {
@@ -43,6 +48,8 @@ export const quitCommand: SlashCommand = {
           type: 'quit',
           duration: formatDuration(wallDuration),
           totalCost: totalCost,
+          totalPromptCost: totalPromptCost,
+          totalOutputCost: totalOutputCost,
           id: now,
         },
       ],
