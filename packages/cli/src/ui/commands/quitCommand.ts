@@ -5,6 +5,7 @@
  */
 
 import { formatDuration } from '../utils/formatters.js';
+import { calculateModelCost } from '../../utils/pricing.js';
 import { type SlashCommand } from './types.js';
 
 export const quitCommand: SlashCommand = {
@@ -19,29 +20,15 @@ export const quitCommand: SlashCommand = {
     let totalCost = 0;
     for (const modelName in metrics.models) {
       const m = metrics.models[modelName];
-      let promptCost = 0;
-      if (modelName === 'gemini-2.5-pro') {
-        if (m.tokens.prompt <= 200000) {
-          promptCost = m.tokens.prompt * (1.25 / 1000000);
-        } else {
-          promptCost = m.tokens.prompt * (2.50 / 1000000);
-        }
-      } else if (modelName === 'gemini-2.5-flash') {
-        promptCost = m.tokens.prompt * (0.30 / 1000000);
-      }
-      totalCost += promptCost;
-
-      let outputCost = 0;
-      if (modelName === 'gemini-2.5-pro') {
-        if (m.tokens.candidates <= 200000) {
-          outputCost = m.tokens.candidates * (10.00 / 1000000);
-        } else {
-          outputCost = m.tokens.candidates * (15.00 / 1000000);
-        }
-      } else if (modelName === 'gemini-2.5-flash') {
-        outputCost = m.tokens.candidates * (2.50 / 1000000);
-      }
-      totalCost += outputCost;
+      totalCost += calculateModelCost({
+        modelName,
+        api: {
+          totalRequests: m.api.totalRequests,
+          totalErrors: m.api.totalErrors,
+          totalLatencyMs: m.api.totalLatencyMs,
+        },
+        tokens: m.tokens,
+      });
     }
 
     return {
