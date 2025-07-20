@@ -43,7 +43,6 @@ interface TestDirent {
 }
 
 // Helper to create Dirent-like objects for mocking fs.readdir
-<<<<<<< HEAD
 const createDirent = (name: string, type: 'file' | 'dir'): TestDirent => ({
   name,
   isFile: () => type === 'file',
@@ -56,7 +55,6 @@ const createDirent = (name: string, type: 'file' | 'dir'): TestDirent => ({
   path: '',
   parentPath: '',
 });
->>>>>>> origin/main
 
 describe('getFolderStructure', () => {
   beforeEach(() => {
