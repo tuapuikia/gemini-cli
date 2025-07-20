@@ -12,6 +12,8 @@ import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
 import Gradient from 'ink-gradient';
 import { MemoryUsageDisplay } from './MemoryUsageDisplay.js';
+import { useSessionStats } from '../contexts/SessionContext.js';
+import { calculateModelCost } from '../../utils/pricing.js';
 
 interface FooterProps {
   model: string;
@@ -42,6 +44,12 @@ export const Footer: React.FC<FooterProps> = ({
 }) => {
   const limit = tokenLimit(model);
   const percentage = promptTokenCount / limit;
+  const { stats } = useSessionStats();
+
+  const totalEstimatedCost = Object.values(stats.metrics.models).reduce(
+    (sum, modelMetrics) => sum + calculateModelCost(modelMetrics),
+    0,
+  );
 
   return (
     <Box marginTop={1} justifyContent="space-between" width="100%">
@@ -97,6 +105,10 @@ export const Footer: React.FC<FooterProps> = ({
           <Text color={Colors.Gray}>
             ({((1 - percentage) * 100).toFixed(0)}% context left)
           </Text>
+        </Text>
+        <Text color={Colors.AccentYellow}>
+          {' '}
+          | Estimated cost: ${totalEstimatedCost === 0 ? '0' : totalEstimatedCost.toFixed(6)}
         </Text>
         {corgiMode && (
           <Text>
