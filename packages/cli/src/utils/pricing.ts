@@ -38,6 +38,11 @@ const PRICING_PER_MILLION_TOKENS: Record<string, ModelPricing | ModelPricingFlas
     output: 2.50,
     contextCaching: 0.075,
   } as ModelPricingFlash,
+  'gemini-2.5-flash-lite-preview-06-17': {
+    input: 0.10,
+    output: 0.40,
+    contextCaching: 0.025,
+  } as ModelPricingFlash,
 };
 
 export function calculatePromptCost(metrics: ModelMetrics): number {
@@ -59,7 +64,7 @@ export function calculatePromptCost(metrics: ModelMetrics): number {
       cost += metrics.tokens.cached * (proPricing.contextCaching.tier2 / 1000000);
       cost += uncachedTokens * (proPricing.input.tier2 / 1000000);
     }
-  } else if (metrics.modelName === 'gemini-2.5-flash') {
+  } else if (metrics.modelName === 'gemini-2.5-flash' || metrics.modelName === 'gemini-2.5-flash-lite-preview-06-17') {
     const flashPricing = pricing as ModelPricingFlash;
     const uncachedTokens = metrics.tokens.prompt - metrics.tokens.cached;
     cost += metrics.tokens.cached * (flashPricing.contextCaching / 1000000);
@@ -85,7 +90,7 @@ export function calculateOutputCost(metrics: ModelMetrics): number {
     } else {
       cost += totalOutputTokens * (proPricing.output.tier2 / 1000000);
     }
-  } else if (metrics.modelName === 'gemini-2.5-flash') {
+  } else if (metrics.modelName === 'gemini-2.5-flash' || metrics.modelName === 'gemini-2.5-flash-lite-preview-06-17') {
     const flashPricing = pricing as ModelPricingFlash;
     cost += (metrics.tokens.candidates + metrics.tokens.thoughts) * (flashPricing.output / 1000000);
   }
