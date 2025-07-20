@@ -26,6 +26,7 @@ import { ideCommand } from '../ui/commands/ideCommand.js';
 import { bugCommand } from '../ui/commands/bugCommand.js';
 import { quitCommand } from '../ui/commands/quitCommand.js';
 import { restoreCommand } from '../ui/commands/restoreCommand.js';
+import { modelCommand } from '../ui/commands/modelCommand.js';
 
 const loadBuiltInCommands = async (
   config: Config | null,
@@ -45,6 +46,7 @@ const loadBuiltInCommands = async (
     ideCommand(config),
     mcpCommand,
     memoryCommand,
+    modelCommand, // Add the new model command here
     privacyCommand,
     quitCommand,
     restoreCommand(config),
