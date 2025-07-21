@@ -26,6 +26,7 @@ interface FooterProps {
   showErrorDetails: boolean;
   showMemoryUsage?: boolean;
   promptTokenCount: number;
+  requestCount: number; // Added requestCount
   nightly: boolean;
 }
 
@@ -40,6 +41,7 @@ export const Footer: React.FC<FooterProps> = ({
   showErrorDetails,
   showMemoryUsage,
   promptTokenCount,
+  requestCount, // Destructure requestCount
   nightly,
 }) => {
   const limit = tokenLimit(model);
@@ -109,6 +111,10 @@ export const Footer: React.FC<FooterProps> = ({
         <Text color={Colors.AccentYellow}>
           {' '}
           | Estimated cost: ${totalEstimatedCost === 0 ? '0' : totalEstimatedCost.toFixed(6)}
+        </Text>
+        <Text color={Colors.AccentYellow}>
+          {' '}
+          | Request: {requestCount}
         </Text>
         {corgiMode && (
           <Text>
