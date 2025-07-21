@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CommandContext, SlashCommand, MessageActionReturn } from './types.js';
+import { getErrorMessage } from '@google/gemini-cli-core';
+import { MessageType } from '../types.js';
+import { CommandContext, SlashCommand, MessageActionReturn, CommandKind } from './types.js';
 
 export const modelCommand: SlashCommand = {
   name: 'model',
   description: 'Switch the generative model for the current session.',
+  kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext, args: string): Promise<MessageActionReturn> => {
     const modelName = args.trim();
 
@@ -39,7 +42,7 @@ export const modelCommand: SlashCommand = {
       return {
         type: 'message',
         messageType: 'error',
-        content: `Failed to switch model: ${(error as Error).message}`,
+        content: `Failed to switch model: ${getErrorMessage(error)}`,
       };
     }
   },
