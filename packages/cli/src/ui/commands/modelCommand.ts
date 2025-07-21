@@ -10,7 +10,7 @@ import { CommandContext, SlashCommand, MessageActionReturn, CommandKind } from '
 
 export const modelCommand: SlashCommand = {
   name: 'model',
-  description: 'Switch the generative model for the current session.',
+  description: 'Switch the generative model for the current session. (e.g., /model gemini-2.5-pro|gemini-2.5-flash|gemini-2.5-flash-lite-preview-06-17)',
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext, args: string): Promise<MessageActionReturn> => {
     const modelName = args.trim();
