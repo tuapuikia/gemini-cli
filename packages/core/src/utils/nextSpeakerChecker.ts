@@ -64,34 +64,20 @@ export async function checkNextSpeaker(
   geminiClient: GeminiClient,
   abortSignal: AbortSignal,
 ): Promise<NextSpeakerResponse | null> {
-  // We need to capture the curated history because there are many moments when the model will return invalid turns
-  // that when passed back up to the endpoint will break subsequent calls. An example of this is when the model decides
-  // to respond with an empty part collection if you were to send that message back to the server it will respond with
-  // a 400 indicating that model part collections MUST have content.
+  const comprehensiveHistory = chat.getHistory();
   const curatedHistory = chat.getHistory(/* curated */ true);
 
-  // Ensure there's a model response to analyze
-  if (curatedHistory.length === 0) {
-    // Cannot determine next speaker if history is empty.
-    return null;
-  }
-
-  const comprehensiveHistory = chat.getHistory();
-  // If comprehensiveHistory is empty, there is no last message to check.
-  // This case should ideally be caught by the curatedHistory.length check earlier,
-  // but as a safeguard:
+  // If history is empty, we cannot determine the next speaker.
   if (comprehensiveHistory.length === 0) {
     return null;
   }
+
   const lastComprehensiveMessage =
     comprehensiveHistory[comprehensiveHistory.length - 1];
 
-  // If the last message is a user message containing only function_responses,
-  // then the model should speak next.
-  if (
-    lastComprehensiveMessage &&
-    isFunctionResponse(lastComprehensiveMessage)
-  ) {
+  // Rule 1: If the last message is a user message containing only function_responses,
+  // then the model should speak next. This is a deterministic case.
+  if (isFunctionResponse(lastComprehensiveMessage)) {
     return {
       reasoning:
         'The last message was a function response, so the model should speak next.',
@@ -99,13 +85,21 @@ export async function checkNextSpeaker(
     };
   }
 
+  // Rule 2: If the last comprehensive message is a model message with no content,
+  // it's a filler, and the model should speak next.
   if (
-    lastComprehensiveMessage &&
     lastComprehensiveMessage.role === 'model' &&
-    lastComprehensiveMessage.parts &&
-    lastComprehensiveMessage.parts.length === 0
+    (!lastComprehensiveMessage.parts ||
+      lastComprehensiveMessage.parts.length === 0)
   ) {
-    lastComprehensiveMessage.parts.push({ text: '' });
+    // Ensure there's at least an empty part to avoid issues with subsequent processing
+    // if this message were to be re-sent to the server.
+    if (!lastComprehensiveMessage.parts) {
+      lastComprehensiveMessage.parts = [];
+    }
+    if (lastComprehensiveMessage.parts.length === 0) {
+      lastComprehensiveMessage.parts.push({ text: '' });
+    }
     return {
       reasoning:
         'The last message was a filler model message with no content (nothing for user to act on), model should speak next.',
@@ -113,10 +107,14 @@ export async function checkNextSpeaker(
     };
   }
 
-  const lastMessage = curatedHistory[curatedHistory.length - 1];
-  if (!lastMessage || lastMessage.role !== 'model') {
-    // Cannot determine next speaker if the last turn wasn't from the model
-    // or if history is empty.
+  // We need a valid last model message from the curated history for further checks.
+  // If curated history is empty or the last message isn't from the model,
+  // we cannot proceed with the explicit checks that avoid LLM calls.
+  if (curatedHistory.length === 0) {
+    return null;
+  }
+  const lastCuratedModelMessage = curatedHistory[curatedHistory.length - 1];
+  if (lastCuratedModelMessage.role !== 'model') {
     return null;
   }
 
@@ -150,14 +148,14 @@ export async function checkNextSpeaker(
   }
 
   // Apply decision rules based on the last model message to reduce LLM calls.
-  if (isModelExplicitlyContinuing(lastMessage)) {
+  if (isModelExplicitlyContinuing(lastCuratedModelMessage)) {
     return {
       reasoning: 'Model explicitly stated it will continue.',
       next_speaker: 'model',
     };
   }
 
-  if (isModelAskingQuestion(lastMessage)) {
+  if (isModelAskingQuestion(lastCuratedModelMessage)) {
     return {
       reasoning: 'Model ended with a direct question to the user.',
       next_speaker: 'user',
