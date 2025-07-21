@@ -6,12 +6,13 @@
 
 import { formatDuration } from '../utils/formatters.js';
 import { calculateModelCost, calculatePromptCost, calculateOutputCost } from '../../utils/pricing.js';
-import { type SlashCommand } from './types.js';
+import { CommandKind, type SlashCommand } from './types.js';
 
 export const quitCommand: SlashCommand = {
   name: 'quit',
-  altName: 'exit',
+  altNames: ['exit'],
   description: 'exit the cli',
+  kind: CommandKind.BUILT_IN,
   action: (context) => {
     const now = Date.now();
     const { sessionStartTime, metrics } = context.session.stats;
