@@ -113,14 +113,58 @@ export async function checkNextSpeaker(
     };
   }
 
-  // Things checked out. Let's proceed to potentially making an LLM request.
-
   const lastMessage = curatedHistory[curatedHistory.length - 1];
   if (!lastMessage || lastMessage.role !== 'model') {
     // Cannot determine next speaker if the last turn wasn't from the model
     // or if history is empty.
     return null;
   }
+
+  // Helper to check if the model is explicitly asking a question to the user.
+  function isModelAskingQuestion(message: Content): boolean {
+    if (!message.parts || message.parts.length === 0) return false;
+    const lastPart = message.parts[message.parts.length - 1];
+    if ('text' in lastPart && lastPart.text) {
+      const text = lastPart.text.trim();
+      // Check if it ends with a question mark and is not just a tool code block.
+      return text.endsWith('?') && !text.includes('```');
+    }
+    return false;
+  }
+
+  // Helper to check if the model explicitly states it will continue.
+  function isModelExplicitlyContinuing(message: Content): boolean {
+    if (!message.parts || message.parts.length === 0) return false;
+    const lastPart = message.parts[message.parts.length - 1];
+    if ('text' in lastPart && lastPart.text) {
+      const text = lastPart.text.toLowerCase();
+      return (
+        text.includes('next, i will') ||
+        text.includes('now i\'ll process') ||
+        text.includes('moving on to analyze') ||
+        text.includes('i will proceed to') ||
+        text.includes('i\'ll continue by')
+      );
+    }
+    return false;
+  }
+
+  // Apply decision rules based on the last model message to reduce LLM calls.
+  if (isModelExplicitlyContinuing(lastMessage)) {
+    return {
+      reasoning: 'Model explicitly stated it will continue.',
+      next_speaker: 'model',
+    };
+  }
+
+  if (isModelAskingQuestion(lastMessage)) {
+    return {
+      reasoning: 'Model ended with a direct question to the user.',
+      next_speaker: 'user',
+    };
+  }
+
+  // Things checked out. Let's proceed to potentially making an LLM request.
 
   const contents: Content[] = [
     ...curatedHistory,
