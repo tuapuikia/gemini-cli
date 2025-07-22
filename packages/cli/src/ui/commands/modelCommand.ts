@@ -10,7 +10,7 @@ import { CommandContext, SlashCommand, MessageActionReturn, CommandKind } from '
 
 export const modelCommand: SlashCommand = {
   name: 'model',
-  description: 'Switch the generative model for the current session. (e.g., /model gemini-2.5-pro|gemini-2.5-flash|gemini-2.5-flash-lite-preview-06-17)',
+  description: 'Switch the generative model for the current session. (e.g., /model gemini-2.5-pro|gemini-2.5-flash|gemini-2.5-flash-lite)',
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext, args: string): Promise<MessageActionReturn> => {
     const modelName = args.trim();
@@ -50,7 +50,7 @@ export const modelCommand: SlashCommand = {
     const availableModels = [
       'gemini-2.5-pro',
       'gemini-2.5-flash',
-      'gemini-2.5-flash-lite-preview-06-17',
+      'gemini-2.5-flash-lite',
     ];
     return availableModels.filter(model => model.startsWith(partialArg));
   },
