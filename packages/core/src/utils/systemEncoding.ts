@@ -37,7 +37,13 @@ export function getCachedEncodingForBuffer(buffer: Buffer): string {
     return cachedSystemEncoding;
   }
 
-  // Otherwise, detect from this specific buffer (don't cache this result)
+  // If system encoding detection failed on a non-Windows platform, default to utf-8
+  if (os.platform() !== 'win32') {
+    return 'utf-8';
+  }
+
+  // Otherwise (Windows, or if we still need to detect from buffer on Windows),
+  // detect from this specific buffer (don't cache this result)
   return detectEncodingFromBuffer(buffer) || 'utf-8';
 }
 
