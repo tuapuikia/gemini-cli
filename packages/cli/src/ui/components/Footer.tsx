@@ -26,7 +26,8 @@ interface FooterProps {
   showErrorDetails: boolean;
   showMemoryUsage?: boolean;
   promptTokenCount: number;
-  requestCount: number; // Added requestCount
+  requestCount: number;
+  geminiApiRequestCount: number;
   nightly: boolean;
 }
 
@@ -42,6 +43,7 @@ export const Footer: React.FC<FooterProps> = ({
   showMemoryUsage,
   promptTokenCount,
   requestCount, // Destructure requestCount
+  geminiApiRequestCount,
   nightly,
 }) => {
   const limit = tokenLimit(model);
@@ -114,7 +116,7 @@ export const Footer: React.FC<FooterProps> = ({
         </Text>
         <Text color={Colors.AccentYellow}>
           {' '}
-          | Request: {requestCount}
+          | Requests: {requestCount} (API: {geminiApiRequestCount})
         </Text>
         {corgiMode && (
           <Text>

@@ -980,6 +980,7 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
             }
             promptTokenCount={sessionStats.lastPromptTokenCount}
             requestCount={sessionStats.promptCount}
+            geminiApiRequestCount={sessionStats.geminiApiRequestCount}
             nightly={nightly}
           />
         </Box>

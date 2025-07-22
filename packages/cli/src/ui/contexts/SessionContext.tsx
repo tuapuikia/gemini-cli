@@ -17,6 +17,7 @@ import {
   uiTelemetryService,
   SessionMetrics,
   ModelMetrics,
+  RequestCountingContentGenerator,
 } from '@google/gemini-cli-core';
 
 // --- Interface Definitions ---
@@ -28,6 +29,7 @@ export interface SessionStatsState {
   metrics: SessionMetrics;
   lastPromptTokenCount: number;
   promptCount: number;
+  geminiApiRequestCount: number;
 }
 
 export interface ComputedSessionStats {
@@ -68,6 +70,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
     metrics: uiTelemetryService.getMetrics(),
     lastPromptTokenCount: 0,
     promptCount: 0,
+    geminiApiRequestCount: 0,
   });
 
   useEffect(() => {
@@ -82,6 +85,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
         ...prevState,
         metrics,
         lastPromptTokenCount,
+        geminiApiRequestCount: RequestCountingContentGenerator.getRequestCount(),
       }));
     };
 
