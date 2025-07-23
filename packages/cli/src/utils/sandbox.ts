@@ -680,6 +680,8 @@ export async function start_sandbox(
       `groupadd -f -g ${gid} ${username}`,
       // Create user only if it doesn't exist. Use -o for non-unique UID.
       `id -u ${username} &>/dev/null || useradd -o -u ${uid} -g ${gid} -d ${homeDir} -s /bin/bash ${username}`,
+      // If sudo is available, chown the home directory to the new user.
+      `command -v sudo &>/dev/null && sudo chown ${username} ${homeDir}`,
     ].join(' && ');
 
     const originalCommand = finalEntrypoint[2];
