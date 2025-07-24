@@ -8,6 +8,7 @@ import { setGlobalDispatcher, ProxyAgent } from 'undici';
 import {
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_FLASH_LITE_MODEL,
 } from '../config/models.js';
 
 /**
@@ -23,60 +24,89 @@ export async function getEffectiveModel(
   currentConfiguredModel: string,
   proxy?: string,
 ): Promise<string> {
-  if (currentConfiguredModel !== DEFAULT_GEMINI_MODEL) {
-    // Only check if the user is trying to use the specific pro model we want to fallback from.
+  // If the user has explicitly configured a model other than the default,
+  // we respect that choice and do not attempt any fallback.
+  if (
+    currentConfiguredModel !== DEFAULT_GEMINI_MODEL &&
+    currentConfiguredModel !== DEFAULT_GEMINI_FLASH_MODEL &&
+    currentConfiguredModel !== DEFAULT_GEMINI_FLASH_LITE_MODEL
+  ) {
     return currentConfiguredModel;
   }
 
-  const modelToTest = DEFAULT_GEMINI_MODEL;
-  const fallbackModel = DEFAULT_GEMINI_FLASH_MODEL;
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent`;
-  const thinkingBudgetStr = process.env.GEMINI_THINKING_BUDGET;
-  const thinkingBudget =
-    thinkingBudgetStr && /^\d+$/.test(thinkingBudgetStr)
-      ? parseInt(thinkingBudgetStr, 10)
-      : 128;
-  const body = JSON.stringify({
-    contents: [{ parts: [{ text: 'test' }] }],
-    generationConfig: {
-      maxOutputTokens: 1,
-      temperature: 0,
-      topK: 1,
-      topP: 0,
-      thinkingConfig: { thinkingBudget, includeThoughts: false },
-    },
-  });
+  const modelsToTest = [
+    DEFAULT_GEMINI_MODEL,
+    DEFAULT_GEMINI_FLASH_MODEL,
+    DEFAULT_GEMINI_FLASH_LITE_MODEL,
+  ];
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000); // 500ms timeout for the request
+  // If the current configured model is one of the defaults, prioritize it.
+  // Otherwise, start with the highest-tier default model.
+  let startingModelIndex = modelsToTest.indexOf(currentConfiguredModel);
+  if (startingModelIndex === -1) {
+    startingModelIndex = 0; // Start with DEFAULT_GEMINI_MODEL if current is not a default
+  }
 
-  try {
-    if (proxy) {
-      setGlobalDispatcher(new ProxyAgent(proxy));
-    }
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
+  for (let i = startingModelIndex; i < modelsToTest.length; i++) {
+    const modelToTest = modelsToTest[i];
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent`;
+    const thinkingBudgetStr = process.env.GEMINI_THINKING_BUDGET;
+    const thinkingBudget =
+      thinkingBudgetStr && /^\d+$/.test(thinkingBudgetStr)
+        ? parseInt(thinkingBudgetStr, 10)
+        : 128;
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: 'test' }] }],
+      generationConfig: {
+        maxOutputTokens: 1,
+        temperature: 0,
+        topK: 1,
+        topP: 0,
+        thinkingConfig: { thinkingBudget, includeThoughts: false },
       },
-      body,
-      signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2-second timeout for the request
 
-    if (response.status === 429) {
+    try {
+      if (proxy) {
+        setGlobalDispatcher(new ProxyAgent(proxy));
+      }
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 429) {
+        console.log(
+          `[INFO] Model ${modelToTest} was temporarily unavailable. Attempting next fallback model.`,
+        );
+        continue; // Try the next model in the list
+      }
+      // If successful or any other non-429 error, use this model.
+      return modelToTest;
+    } catch (_error) {
+      clearTimeout(timeoutId);
+      // On timeout or any other fetch error, try the next model.
       console.log(
-        `[INFO] Your configured model (${modelToTest}) was temporarily unavailable. Switched to ${fallbackModel} for this session.`,
+        `[INFO] Failed to reach model ${modelToTest}. Attempting next fallback model.`,
       );
-      return fallbackModel;
+      continue;
     }
-    // For any other case (success, other error codes), we stick to the original model.
-    return currentConfiguredModel;
-  } catch (_error) {
-    clearTimeout(timeoutId);
-    // On timeout or any other fetch error, stick to the original model.
-    return currentConfiguredModel;
   }
+
+  // If all models failed, return the originally configured model as a last resort.
+  // This ensures we don't return undefined or an empty string.
+  console.warn(
+    `[WARNING] All fallback models failed. Sticking with originally configured model: ${currentConfiguredModel}.`,
+  );
+  return currentConfiguredModel;
 }

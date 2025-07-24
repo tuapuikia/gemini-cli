@@ -11,7 +11,7 @@ import {
   GenerateContentResponse,
 } from '@google/genai';
 import { GeminiClient } from '../core/client.js';
-import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
+import { DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_GEMINI_FLASH_LITE_MODEL } from '../config/models.js';
 import { getResponseText, partToString } from './partUtils.js';
 
 /**
@@ -66,6 +66,7 @@ export async function summarizeToolOutput(
   geminiClient: GeminiClient,
   abortSignal: AbortSignal,
   maxOutputTokens: number = 2000,
+  model: string = DEFAULT_GEMINI_FLASH_MODEL,
 ): Promise<string> {
   // There is going to be a slight difference here since we are comparing length of string with maxOutputTokens.
   // This is meant to be a ballpark estimation of if we need to summarize the tool output.
@@ -86,7 +87,7 @@ export async function summarizeToolOutput(
       contents,
       toolOutputSummarizerConfig,
       abortSignal,
-      DEFAULT_GEMINI_FLASH_MODEL,
+      model,
     )) as unknown as GenerateContentResponse;
     return getResponseText(parsedResponse) || textToSummarize;
   } catch (error) {

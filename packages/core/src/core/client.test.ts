@@ -19,7 +19,7 @@ import { GeminiChat } from './geminiChat.js';
 import { Config } from '../config/config.js';
 import { GeminiEventType, Turn } from './turn.js';
 import { getCoreSystemPrompt } from './prompts.js';
-import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
+import { DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_GEMINI_FLASH_LITE_MODEL } from '../config/models.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { setSimulate429 } from '../utils/testUtils.js';
 import { tokenLimit } from './tokenLimits.js';
@@ -1094,6 +1094,23 @@ Here are files the user has recently opened, with the most recent at the top:
         fallbackModel,
         undefined,
       );
+    });
+
+    it('should not trigger fallback if current model is already Flash Lite model', async () => {
+      const currentModel = DEFAULT_GEMINI_FLASH_LITE_MODEL;
+      vi.spyOn(client['config'], 'getModel').mockReturnValueOnce(currentModel);
+
+      const mockFallbackHandler = vi.fn().mockResolvedValue(true);
+      client['config'].flashFallbackHandler = mockFallbackHandler;
+      client['config'].setModel = vi.fn();
+
+      const result = await client['handleFlashFallback'](
+        AuthType.LOGIN_WITH_GOOGLE,
+      );
+
+      expect(result).toBeNull();
+      expect(mockFallbackHandler).not.toHaveBeenCalled();
+      expect(client['config'].setModel).not.toHaveBeenCalled();
     });
   });
 });

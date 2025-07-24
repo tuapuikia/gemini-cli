@@ -157,6 +157,17 @@ describe('<ModelStatsDisplay />', () => {
             tool: 10,
           },
         },
+        'gemini-2.5-flash-lite': {
+          api: { totalRequests: 5, totalErrors: 0, totalLatencyMs: 100 },
+          tokens: {
+            prompt: 50,
+            candidates: 100,
+            total: 150,
+            cached: 20,
+            thoughts: 5,
+            tool: 2,
+          },
+        },
       },
       tools: {
         totalCalls: 0,

@@ -41,6 +41,7 @@ import {
 import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_FLASH_LITE_MODEL,
 } from './models.js';
 import { ClearcutLogger } from '../telemetry/clearcut-logger/clearcut-logger.js';
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
@@ -638,4 +639,4 @@ export class Config {
   }
 }
 // Export model constants for use in CLI
-export { DEFAULT_GEMINI_FLASH_MODEL };
+export { DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_GEMINI_FLASH_LITE_MODEL };

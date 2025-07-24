@@ -41,7 +41,7 @@ import {
 } from './contentGenerator.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { RequestCountingContentGenerator } from './requestCountingContentGenerator.js';
-import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
+import { DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_GEMINI_FLASH_LITE_MODEL } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
 import { ideContext } from '../services/ideContext.js';
 import { logFlashDecidedToContinue } from '../telemetry/loggers.js';
@@ -703,8 +703,8 @@ export class GeminiClient {
     const currentModel = this.config.getModel();
     const fallbackModel = DEFAULT_GEMINI_FLASH_MODEL;
 
-    // Don't fallback if already using Flash model
-    if (currentModel === fallbackModel) {
+    // Don't fallback if already using Flash model or Flash Lite model
+    if (currentModel === fallbackModel || currentModel === DEFAULT_GEMINI_FLASH_LITE_MODEL) {
       return null;
     }
 
