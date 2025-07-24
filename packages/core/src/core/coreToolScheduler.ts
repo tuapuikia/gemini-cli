@@ -35,6 +35,7 @@ export type ValidatingToolCall = {
   tool: Tool;
   startTime?: number;
   outcome?: ToolConfirmationOutcome;
+  retryCount: number;
 };
 
 export type ScheduledToolCall = {
@@ -43,6 +44,7 @@ export type ScheduledToolCall = {
   tool: Tool;
   startTime?: number;
   outcome?: ToolConfirmationOutcome;
+  retryCount: number;
 };
 
 export type ErroredToolCall = {
@@ -69,6 +71,7 @@ export type ExecutingToolCall = {
   liveOutput?: string;
   startTime?: number;
   outcome?: ToolConfirmationOutcome;
+  retryCount: number;
 };
 
 export type CancelledToolCall = {
@@ -222,6 +225,7 @@ interface CoreToolSchedulerOptions {
   approvalMode?: ApprovalMode;
   getPreferredEditor: () => EditorType | undefined;
   config: Config;
+  maxRetries?: number;
 }
 
 export class CoreToolScheduler {
@@ -233,6 +237,7 @@ export class CoreToolScheduler {
   private approvalMode: ApprovalMode;
   private getPreferredEditor: () => EditorType | undefined;
   private config: Config;
+  private maxRetries: number;
 
   constructor(options: CoreToolSchedulerOptions) {
     this.config = options.config;
@@ -242,6 +247,7 @@ export class CoreToolScheduler {
     this.onToolCallsUpdate = options.onToolCallsUpdate;
     this.approvalMode = options.approvalMode ?? ApprovalMode.DEFAULT;
     this.getPreferredEditor = options.getPreferredEditor;
+    this.maxRetries = options.maxRetries ?? 0; // Default to 0 retries
   }
 
   private setStatusInternal(
@@ -448,6 +454,7 @@ export class CoreToolScheduler {
           request: reqInfo,
           tool: toolInstance,
           startTime: Date.now(),
+          retryCount: 0,
         };
       },
     );
@@ -688,16 +695,42 @@ export class CoreToolScheduler {
             this.setStatusInternal(callId, 'success', successResponse);
           })
           .catch((executionError: Error) => {
-            this.setStatusInternal(
-              callId,
-              'error',
-              createErrorResponse(
-                scheduledCall.request,
-                executionError instanceof Error
-                  ? executionError
-                  : new Error(String(executionError)),
-              ),
-            );
+            if (scheduledCall.retryCount < this.maxRetries) {
+              console.warn(
+                `Tool call "${scheduledCall.request.name}" failed. Retrying (attempt ${scheduledCall.retryCount + 1}/${this.maxRetries})...`,
+              );
+              this.toolCalls = this.toolCalls.map((tc) => {
+                if (tc.request.callId === callId) {
+                  // Ensure 'tool' property is carried over and retryCount is incremented
+                  const currentRetryCount = (
+                    tc as ValidatingToolCall | ScheduledToolCall | ExecutingToolCall
+                  ).retryCount;
+                  return {
+                    ...tc,
+                    status: 'scheduled',
+                    retryCount: currentRetryCount + 1,
+                  } as ScheduledToolCall;
+                }
+                return tc;
+              });
+              this.notifyToolCallsUpdate();
+              this.attemptExecutionOfScheduledCalls(signal); // Re-attempt execution
+            } else {
+              console.error(
+                `Tool call "${scheduledCall.request.name}" failed after ${this.maxRetries} retries.`,
+                executionError,
+              );
+              this.setStatusInternal(
+                callId,
+                'error',
+                createErrorResponse(
+                  scheduledCall.request,
+                  executionError instanceof Error
+                    ? executionError
+                    : new Error(String(executionError)),
+                ),
+              );
+            }
           });
       });
     }
