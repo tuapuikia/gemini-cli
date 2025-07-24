@@ -247,7 +247,7 @@ export class CoreToolScheduler {
     this.onToolCallsUpdate = options.onToolCallsUpdate;
     this.approvalMode = options.approvalMode ?? ApprovalMode.DEFAULT;
     this.getPreferredEditor = options.getPreferredEditor;
-    this.maxRetries = options.maxRetries ?? 0; // Default to 0 retries
+    this.maxRetries = options.maxRetries ?? 5; // Default to 5 retries
   }
 
   private setStatusInternal(
