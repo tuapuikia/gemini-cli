@@ -584,13 +584,11 @@ export class Config {
     return this.ideMode;
   }
 
-<<<<<<< HEAD
   getDisableFallbackMode(): boolean {
     return this.disableFallbackMode;
-=======
+  }
   getIdeClient(): IdeClient | undefined {
     return this.ideClient;
->>>>>>> origin/main
   }
 
   async getGitService(): Promise<GitService> {
