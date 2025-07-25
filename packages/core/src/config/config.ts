@@ -46,6 +46,7 @@ import {
 import { ClearcutLogger } from '../telemetry/clearcut-logger/clearcut-logger.js';
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
 import { MCPOAuthConfig } from '../mcp/oauth-provider.js';
+import { IdeClient } from '../ide/ide-client.js';
 
 // Re-export OAuth config type
 export type { MCPOAuthConfig };
@@ -182,6 +183,7 @@ export interface ConfigParameters {
   summarizeToolOutput?: Record<string, SummarizeToolOutputSettings>;
   ideMode?: boolean;
   disableFallbackMode?: boolean;
+  ideClient?: IdeClient;
 }
 
 export class Config {
@@ -223,6 +225,7 @@ export class Config {
   private readonly extensionContextFilePaths: string[];
   private readonly noBrowser: boolean;
   private readonly ideMode: boolean;
+  private readonly ideClient: IdeClient | undefined;
   private modelSwitchedDuringSession: boolean = false;
   private readonly maxSessionTurns: number;
   private readonly listExtensions: boolean;
@@ -292,6 +295,7 @@ export class Config {
     this.disableFallbackMode = !(
       process.env.GEMINI_FALLBACK_MODE?.toLowerCase() === 'false'
     );
+    this.ideClient = params.ideClient;
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -580,8 +584,13 @@ export class Config {
     return this.ideMode;
   }
 
+<<<<<<< HEAD
   getDisableFallbackMode(): boolean {
     return this.disableFallbackMode;
+=======
+  getIdeClient(): IdeClient | undefined {
+    return this.ideClient;
+>>>>>>> origin/main
   }
 
   async getGitService(): Promise<GitService> {
