@@ -6,6 +6,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as os from 'os';
+import * as fs from 'fs';
+import * as path from 'path';
 import { loadCliConfig, parseArguments } from './config.js';
 import { Settings } from './settings.js';
 import { Extension } from './extension.js';
@@ -16,6 +18,15 @@ vi.mock('os', async (importOriginal) => {
   return {
     ...actualOs,
     homedir: vi.fn(() => '/mock/home/user'),
+  };
+});
+
+vi.mock('fs', async (importOriginal) => {
+  const actualFs = await importOriginal<typeof fs>();
+  return {
+    ...actualFs,
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(),
   };
 });
 
@@ -145,6 +156,12 @@ describe('parseArguments', () => {
     const argv = await parseArguments();
     expect(argv.promptInteractive).toBe('interactive prompt');
     expect(argv.prompt).toBeUndefined();
+  });
+
+  it('should parse --config flag', async () => {
+    process.argv = ['node', 'script.js', '--config', 'mycustomsettings.json'];
+    const argv = await parseArguments();
+    expect(argv.config).toBe('mycustomsettings.json');
   });
 });
 
@@ -337,7 +354,7 @@ describe('loadCliConfig telemetry', () => {
   });
 
   it('should use telemetry OTLP endpoint from settings if CLI flag is not present', async () => {
-    process.argv = ['node', 'script.js'];
+    process.argv = ['node', 'script.2js'];
     const argv = await parseArguments();
     const settings: Settings = {
       telemetry: { otlpEndpoint: 'http://settings.example.com' },
@@ -433,6 +450,103 @@ describe('loadCliConfig telemetry', () => {
     const settings: Settings = { telemetry: { enabled: true } };
     const config = await loadCliConfig(settings, [], 'test-session', argv);
     expect(config.getTelemetryLogPromptsEnabled()).toBe(true);
+  });
+});
+
+describe('loadSettings with custom config file', () => {
+  const MOCK_HOME_DIR = '/mock/home/user';
+  const MOCK_USER_SETTINGS_DIR = path.join(MOCK_HOME_DIR, '.gemini');
+  const MOCK_DEFAULT_SETTINGS_PATH = path.join(MOCK_USER_SETTINGS_DIR, 'settings.json');
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(os.homedir).mockReturnValue(MOCK_HOME_DIR);
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readFileSync).mockReturnValue('');
+    // Ensure API key is set for loadCliConfig to not throw
+    process.env.GEMINI_API_KEY = 'test-api-key';
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should load default settings.json when no custom config file is specified', async () => {
+    const defaultSettingsContent = JSON.stringify({ theme: 'default-theme' });
+    vi.mocked(fs.existsSync).mockImplementation((p) => p === MOCK_DEFAULT_SETTINGS_PATH);
+    vi.mocked(fs.readFileSync).mockImplementation((p) => {
+      if (p === MOCK_DEFAULT_SETTINGS_PATH) return defaultSettingsContent;
+      return '';
+    });
+
+    process.argv = ['node', 'script.js'];
+    const argv = await parseArguments();
+    const settings = loadSettings('/mock/workspace', argv.config);
+
+    expect(fs.existsSync).toHaveBeenCalledWith(MOCK_DEFAULT_SETTINGS_PATH);
+    expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_DEFAULT_SETTINGS_PATH, 'utf-8');
+    expect(settings.user.settings.theme).toBe('default-theme');
+  });
+
+  it('should load custom config file when --config flag is specified', async () => {
+    const customConfigFileName = 'mycustomsettings.json';
+    const MOCK_CUSTOM_SETTINGS_PATH = path.join(MOCK_USER_SETTINGS_DIR, customConfigFileName);
+    const customSettingsContent = JSON.stringify({ theme: 'custom-theme' });
+
+    vi.mocked(fs.existsSync).mockImplementation((p) => p === MOCK_CUSTOM_SETTINGS_PATH);
+    vi.mocked(fs.readFileSync).mockImplementation((p) => {
+      if (p === MOCK_CUSTOM_SETTINGS_PATH) return customSettingsContent;
+      return '';
+    });
+
+    process.argv = ['node', 'script.js', '--config', customConfigFileName];
+    const argv = await parseArguments();
+    const settings = loadSettings('/mock/workspace', argv.config);
+
+    expect(fs.existsSync).toHaveBeenCalledWith(MOCK_CUSTOM_SETTINGS_PATH);
+    expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_CUSTOM_SETTINGS_PATH, 'utf-8');
+    expect(settings.user.settings.theme).toBe('custom-theme');
+    // Ensure default settings.json was NOT checked
+    expect(fs.existsSync).not.toHaveBeenCalledWith(MOCK_DEFAULT_SETTINGS_PATH);
+  });
+
+  it('should handle custom config file not found gracefully', async () => {
+    const customConfigFileName = 'nonexistent.json';
+    const MOCK_NONEXISTENT_SETTINGS_PATH = path.join(MOCK_USER_SETTINGS_DIR, customConfigFileName);
+
+    vi.mocked(fs.existsSync).mockReturnValue(false); // No files exist
+
+    process.argv = ['node', 'script.js', '--config', customConfigFileName];
+    const argv = await parseArguments();
+    const settings = loadSettings('/mock/workspace', argv.config);
+
+    expect(fs.existsSync).toHaveBeenCalledWith(MOCK_NONEXISTENT_SETTINGS_PATH);
+    expect(fs.readFileSync).not.toHaveBeenCalled(); // Should not attempt to read
+    expect(settings.user.settings).toEqual({}); // User settings should be empty
+    expect(settings.errors).toHaveLength(0); // No error if file simply doesn't exist
+  });
+
+  it('should report error if custom config file is invalid JSON', async () => {
+    const customConfigFileName = 'invalid.json';
+    const MOCK_INVALID_SETTINGS_PATH = path.join(MOCK_USER_SETTINGS_DIR, customConfigFileName);
+    const invalidJsonContent = '{"theme": "invalid'; // Malformed JSON
+
+    vi.mocked(fs.existsSync).mockImplementation((p) => p === MOCK_INVALID_SETTINGS_PATH);
+    vi.mocked(fs.readFileSync).mockImplementation((p) => {
+      if (p === MOCK_INVALID_SETTINGS_PATH) return invalidJsonContent;
+      return '';
+    });
+
+    process.argv = ['node', 'script.js', '--config', customConfigFileName];
+    const argv = await parseArguments();
+    const settings = loadSettings('/mock/workspace', argv.config);
+
+    expect(fs.existsSync).toHaveBeenCalledWith(MOCK_INVALID_SETTINGS_PATH);
+    expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_INVALID_SETTINGS_PATH, 'utf-8');
+    expect(settings.user.settings).toEqual({}); // User settings should be empty
+    expect(settings.errors).toHaveLength(1);
+    expect(settings.errors[0].path).toBe(MOCK_INVALID_SETTINGS_PATH);
+    expect(settings.errors[0].message).toContain('Unexpected end of JSON input');
   });
 });
 

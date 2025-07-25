@@ -88,22 +88,8 @@ import { runAcpPeer } from './acp/acpPeer.js';
 
 export async function main() {
   const workspaceRoot = process.cwd();
-  const settings = loadSettings(workspaceRoot);
-
-  await cleanupCheckpoints();
-  if (settings.errors.length > 0) {
-    for (const error of settings.errors) {
-      let errorMessage = `Error in ${error.path}: ${error.message}`;
-      if (!process.env.NO_COLOR) {
-        errorMessage = `\x1b[31m${errorMessage}\x1b[0m`;
-      }
-      console.error(errorMessage);
-      console.error(`Please fix ${error.path} and try again.`);
-    }
-    process.exit(1);
-  }
-
   const argv = await parseArguments();
+  const settings = loadSettings(workspaceRoot, argv.config);
   const extensions = loadExtensions(workspaceRoot);
   const config = await loadCliConfig(
     settings.merged,

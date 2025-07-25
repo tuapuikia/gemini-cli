@@ -293,7 +293,7 @@ export function loadEnvironment(): void {
  * Loads settings from user and workspace directories.
  * Project settings override user settings.
  */
-export function loadSettings(workspaceDir: string): LoadedSettings {
+export function loadSettings(workspaceDir: string, customConfigFileName?: string): LoadedSettings {
   loadEnvironment();
   let systemSettings: Settings = {};
   let userSettings: Settings = {};
@@ -317,9 +317,13 @@ export function loadSettings(workspaceDir: string): LoadedSettings {
   }
 
   // Load user settings
+  const userConfigPath = customConfigFileName
+    ? path.join(USER_SETTINGS_DIR, customConfigFileName)
+    : USER_SETTINGS_PATH;
+
   try {
-    if (fs.existsSync(USER_SETTINGS_PATH)) {
-      const userContent = fs.readFileSync(USER_SETTINGS_PATH, 'utf-8');
+    if (fs.existsSync(userConfigPath)) {
+      const userContent = fs.readFileSync(userConfigPath, 'utf-8');
       const parsedUserSettings = JSON.parse(
         stripJsonComments(userContent),
       ) as Settings;
@@ -334,7 +338,7 @@ export function loadSettings(workspaceDir: string): LoadedSettings {
   } catch (error: unknown) {
     settingsErrors.push({
       message: getErrorMessage(error),
-      path: USER_SETTINGS_PATH,
+      path: userConfigPath,
     });
   }
 
