@@ -79,7 +79,7 @@ export async function parseArguments(): Promise<CliArgs> {
       default: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
     })
     .option('embedding-model', {
-      alias: 'e',
+      alias: 'em',
       type: 'string',
       description: `Embedding Model`,
       default:

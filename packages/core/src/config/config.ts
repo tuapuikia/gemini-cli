@@ -229,13 +229,11 @@ export class Config {
   private ideMode: boolean;
   private ideClient: IdeClient | undefined;
   private modelSwitchedDuringSession: boolean = false;
-<<<<<<< HEAD
-  private readonly maxSessionTurns: number;
-  private readonly listExtensions: boolean;
-  private readonly _extensions: GeminiCLIExtension[];
-  private readonly disableFallbackMode: boolean;
-  private readonly _blockedMcpServers: Array<{
->>>>>>> origin/main
+  private maxSessionTurns: number;
+  private listExtensions: boolean;
+  private _extensions: GeminiCLIExtension[];
+  private disableFallbackMode: boolean;
+  private _blockedMcpServers: Array<{
     name: string;
     extensionName: string;
   }>;
