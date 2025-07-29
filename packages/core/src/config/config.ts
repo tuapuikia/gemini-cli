@@ -230,6 +230,7 @@ export class Config {
   private readonly ideMode: boolean;
   private readonly ideClient: IdeClient | undefined;
   private inFallbackMode = false;
+  private readonly disableFallbackMode: boolean;
   private readonly maxSessionTurns: number;
   private readonly listExtensions: boolean;
   private readonly _extensions: GeminiCLIExtension[];
