@@ -187,12 +187,8 @@ export interface ConfigParameters {
   summarizeToolOutput?: Record<string, SummarizeToolOutputSettings>;
   ideModeFeature?: boolean;
   ideMode?: boolean;
-<<<<<<< HEAD
   disableFallbackMode?: boolean;
   ideClient?: IdeClient;
-=======
-  ideClient: IdeClient;
->>>>>>> origin/main
 }
 
 export class Config {
@@ -237,7 +233,7 @@ export class Config {
   private readonly noBrowser: boolean;
   private readonly ideModeFeature: boolean;
   private ideMode: boolean;
-  private ideClient: IdeClient;
+  private ideClient: IdeClient | undefined;
   private inFallbackMode = false;
   private readonly disableFallbackMode: boolean;
   private readonly maxSessionTurns: number;
@@ -307,15 +303,12 @@ export class Config {
     this._blockedMcpServers = params.blockedMcpServers ?? [];
     this.noBrowser = params.noBrowser ?? false;
     this.summarizeToolOutput = params.summarizeToolOutput;
-<<<<<<< HEAD
     this.ideMode = params.ideMode ?? false;
     this.disableFallbackMode = !(
       process.env.GEMINI_FALLBACK_MODE?.toLowerCase() === 'false'
     );
-=======
     this.ideModeFeature = params.ideModeFeature ?? false;
     this.ideMode = params.ideMode ?? true;
->>>>>>> origin/main
     this.ideClient = params.ideClient;
 
     if (params.contextFileName) {
@@ -610,7 +603,7 @@ export class Config {
     return this.ideModeFeature;
   }
 
-  getIdeClient(): IdeClient {
+  getIdeClient(): IdeClient | undefined {
     return this.ideClient;
   }
 
@@ -627,11 +620,11 @@ export class Config {
   }
 
   setIdeClientDisconnected(): void {
-    this.ideClient.setDisconnected();
+    this.ideClient?.setDisconnected();
   }
 
   setIdeClientConnected(): void {
-    this.ideClient.reconnect(this.ideMode && this.ideModeFeature);
+    this.ideClient?.reconnect(this.ideMode && this.ideModeFeature);
   }
 
   async getGitService(): Promise<GitService> {
