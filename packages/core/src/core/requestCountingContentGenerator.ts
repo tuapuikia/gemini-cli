@@ -31,14 +31,14 @@ export class RequestCountingContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
   ): Promise<GenerateContentResponse> {
     RequestCountingContentGenerator.requestCount++;
-    return this.wrappedGenerator.generateContent(request);
+    return this.wrappedGenerator.generateContent(request, 'placeholder-user-prompt-id');
   }
 
   async generateContentStream(
     request: GenerateContentParameters,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     RequestCountingContentGenerator.requestCount++;
-    return this.wrappedGenerator.generateContentStream(request);
+    return this.wrappedGenerator.generateContentStream(request, 'placeholder-user-prompt-id');
   }
 
   async countTokens(
