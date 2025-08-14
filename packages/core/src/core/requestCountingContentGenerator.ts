@@ -12,7 +12,7 @@ import {
   EmbedContentResponse,
   EmbedContentParameters,
 } from '@google/genai';
-import { ContentGenerator, AuthType } from './contentGenerator.js';
+import { ContentGenerator } from './contentGenerator.js';
 import { UserTierId } from '../code_assist/types.js';
 
 export class RequestCountingContentGenerator implements ContentGenerator {

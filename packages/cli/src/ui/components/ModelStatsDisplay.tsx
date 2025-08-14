@@ -15,7 +15,7 @@ import {
   calculateErrorRate,
 } from '../utils/computeStats.js';
 import { useSessionStats, ModelMetrics } from '../contexts/SessionContext.js';
-import { calculateModelCost, calculatePromptCost, calculateOutputCost } from '../../utils/pricing.js';
+import { calculatePromptCost, calculateOutputCost } from '../../utils/pricing.js';
  
 const METRIC_COL_WIDTH = 28;
 const MODEL_COL_WIDTH = 22;

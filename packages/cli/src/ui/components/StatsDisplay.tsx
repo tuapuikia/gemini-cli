@@ -10,7 +10,7 @@ import Gradient from 'ink-gradient';
 import { Colors } from '../colors.js';
 import { formatDuration } from '../utils/formatters.js';
 import { useSessionStats, ModelMetrics } from '../contexts/SessionContext.js';
-import { calculateModelCost } from '../../utils/pricing.js';
+
 import {
   getStatusColor,
   TOOL_SUCCESS_RATE_HIGH,

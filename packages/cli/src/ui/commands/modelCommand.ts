@@ -5,7 +5,7 @@
  */
 
 import { getErrorMessage } from '@google/gemini-cli-core';
-import { MessageType } from '../types.js';
+
 import { CommandContext, SlashCommand, MessageActionReturn, CommandKind } from './types.js';
 
 export const modelCommand: SlashCommand = {
