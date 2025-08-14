@@ -1613,4 +1613,73 @@ ${JSON.stringify(
       expect(client['config'].setModel).not.toHaveBeenCalled();
     });
   });
+
+  describe('setHistory', () => {
+    it('should strip thought signatures when stripThoughts is true', () => {
+      const mockChat = {
+        setHistory: vi.fn(),
+      };
+      client['chat'] = mockChat as unknown as GeminiChat;
+
+      const historyWithThoughts: Content[] = [
+        {
+          role: 'user',
+          parts: [{ text: 'hello' }],
+        },
+        {
+          role: 'model',
+          parts: [
+            { text: 'thinking...', thoughtSignature: 'thought-123' },
+            {
+              functionCall: { name: 'test', args: {} },
+              thoughtSignature: 'thought-456',
+            },
+          ],
+        },
+      ];
+
+      client.setHistory(historyWithThoughts, { stripThoughts: true });
+
+      const expectedHistory: Content[] = [
+        {
+          role: 'user',
+          parts: [{ text: 'hello' }],
+        },
+        {
+          role: 'model',
+          parts: [
+            { text: 'thinking...' },
+            { functionCall: { name: 'test', args: {} } },
+          ],
+        },
+      ];
+
+      expect(mockChat.setHistory).toHaveBeenCalledWith(expectedHistory);
+    });
+
+    it('should not strip thought signatures when stripThoughts is false', () => {
+      const mockChat = {
+        setHistory: vi.fn(),
+      };
+      client['chat'] = mockChat as unknown as GeminiChat;
+
+      const historyWithThoughts: Content[] = [
+        {
+          role: 'user',
+          parts: [{ text: 'hello' }],
+        },
+        {
+          role: 'model',
+          parts: [
+            { text: 'thinking...', thoughtSignature: 'thought-123' },
+            { text: 'ok', thoughtSignature: 'thought-456' },
+          ],
+        },
+      ];
+
+      client.setHistory(historyWithThoughts, { stripThoughts: false });
+
+      expect(mockChat.setHistory).toHaveBeenCalledWith(historyWithThoughts);
+    });
+  });
 });
