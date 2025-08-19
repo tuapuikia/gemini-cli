@@ -95,6 +95,7 @@ export type HistoryItemAbout = HistoryItemBase & {
   modelVersion: string;
   selectedAuthType: string;
   gcpProject: string;
+  ideClient: string;
 };
 
 export type HistoryItemHelp = HistoryItemBase & {
@@ -191,6 +192,7 @@ export type Message =
       modelVersion: string;
       selectedAuthType: string;
       gcpProject: string;
+      ideClient: string;
       content?: string; // Optional content, not really used for ABOUT
     }
   | {

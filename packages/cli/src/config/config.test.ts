@@ -267,17 +267,16 @@ describe('parseArguments', () => {
 
 describe('loadCliConfig', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key'; // Ensure API key is set for tests
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -354,7 +353,7 @@ describe('loadCliConfig', () => {
   ];
   testCases.forEach(({ input, expected }) => {
     it(`should set proxy to ${expected} according to environment variable [${input.env_name}]`, async () => {
-      process.env[input.env_name] = input.proxy_url;
+      vi.stubEnv(input.env_name, input.proxy_url);
       process.argv = ['node', 'script.js'];
       const argv = await parseArguments();
       const settings: Settings = {};
@@ -372,7 +371,7 @@ describe('loadCliConfig', () => {
   });
 
   it('should prioritize CLI flag over environment variable for proxy (CLI http://localhost:7890, environment variable http://localhost:7891)', async () => {
-    process.env['http_proxy'] = 'http://localhost:7891';
+    vi.stubEnv('http_proxy', 'http://localhost:7891');
     process.argv = ['node', 'script.js', '--proxy', 'http://localhost:7890'];
     const argv = await parseArguments();
     const settings: Settings = {};
@@ -383,17 +382,16 @@ describe('loadCliConfig', () => {
 
 describe('loadCliConfig telemetry', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -550,6 +548,60 @@ describe('loadCliConfig telemetry', () => {
     const settings: Settings = { telemetry: { enabled: true } };
     const config = await loadCliConfig(settings, [], 'test-session', argv);
     expect(config.getTelemetryLogPromptsEnabled()).toBe(true);
+  });
+
+  it('should use telemetry OTLP protocol from settings if CLI flag is not present', async () => {
+    process.argv = ['node', 'script.js'];
+    const argv = await parseArguments();
+    const settings: Settings = {
+      telemetry: { otlpProtocol: 'http' },
+    };
+    const config = await loadCliConfig(settings, [], 'test-session', argv);
+    expect(config.getTelemetryOtlpProtocol()).toBe('http');
+  });
+
+  it('should prioritize --telemetry-otlp-protocol CLI flag over settings', async () => {
+    process.argv = ['node', 'script.js', '--telemetry-otlp-protocol', 'http'];
+    const argv = await parseArguments();
+    const settings: Settings = {
+      telemetry: { otlpProtocol: 'grpc' },
+    };
+    const config = await loadCliConfig(settings, [], 'test-session', argv);
+    expect(config.getTelemetryOtlpProtocol()).toBe('http');
+  });
+
+  it('should use default protocol if no OTLP protocol is provided via CLI or settings', async () => {
+    process.argv = ['node', 'script.js'];
+    const argv = await parseArguments();
+    const settings: Settings = { telemetry: { enabled: true } };
+    const config = await loadCliConfig(settings, [], 'test-session', argv);
+    expect(config.getTelemetryOtlpProtocol()).toBe('grpc');
+  });
+
+  it('should reject invalid --telemetry-otlp-protocol values', async () => {
+    process.argv = [
+      'node',
+      'script.js',
+      '--telemetry-otlp-protocol',
+      'invalid',
+    ];
+
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
+
+    const mockConsoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    await expect(parseArguments()).rejects.toThrow('process.exit called');
+
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      expect.stringContaining('Invalid values:'),
+    );
+
+    mockExit.mockRestore();
+    mockConsoleError.mockRestore();
   });
 });
 
@@ -1171,17 +1223,16 @@ describe('Approval mode tool exclusion logic', () => {
 
 describe('loadCliConfig with allowed-mcp-server-names', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1421,17 +1472,16 @@ describe('loadCliConfig model selection', () => {
 
 describe('loadCliConfig folderTrustFeature', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1454,17 +1504,16 @@ describe('loadCliConfig folderTrustFeature', () => {
 
 describe('loadCliConfig folderTrust', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1535,12 +1584,11 @@ vi.mock('fs', async () => {
 
 describe('loadCliConfig with includeDirectories', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
     vi.spyOn(process, 'cwd').mockReturnValue(
       path.resolve(path.sep, 'home', 'user', 'project'),
     );
@@ -1548,7 +1596,7 @@ describe('loadCliConfig with includeDirectories', () => {
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1588,17 +1636,16 @@ describe('loadCliConfig with includeDirectories', () => {
 
 describe('loadCliConfig chatCompression', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1627,20 +1674,19 @@ describe('loadCliConfig chatCompression', () => {
 
 describe('loadCliConfig tool exclusions', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
   const originalIsTTY = process.stdin.isTTY;
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
     process.stdin.isTTY = true;
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
     process.stdin.isTTY = originalIsTTY;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1687,20 +1733,19 @@ describe('loadCliConfig tool exclusions', () => {
 
 describe('loadCliConfig interactive', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
   const originalIsTTY = process.stdin.isTTY;
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
     process.stdin.isTTY = true;
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
     process.stdin.isTTY = originalIsTTY;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1739,18 +1784,17 @@ describe('loadCliConfig interactive', () => {
 
 describe('loadCliConfig approval mode', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
     process.argv = ['node', 'script.js']; // Reset argv for each test
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1817,18 +1861,17 @@ describe('loadCliConfig approval mode', () => {
 
 describe('loadCliConfig trustedFolder', () => {
   const originalArgv = process.argv;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/mock/home/user');
-    process.env.GEMINI_API_KEY = 'test-api-key';
+    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
     process.argv = ['node', 'script.js']; // Reset argv for each test
   });
 
   afterEach(() => {
     process.argv = originalArgv;
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -1921,7 +1964,14 @@ describe('loadCliConfig trustedFolder', () => {
     description,
   } of testCases) {
     it(`should be correct for: ${description}`, async () => {
-      (isWorkspaceTrusted as vi.Mock).mockReturnValue(mockTrustValue);
+      (isWorkspaceTrusted as vi.Mock).mockImplementation(
+        (settings: Settings) => {
+          const featureIsEnabled =
+            (settings.folderTrustFeature ?? false) &&
+            (settings.folderTrust ?? true);
+          return featureIsEnabled ? mockTrustValue : true;
+        },
+      );
       const argv = await parseArguments();
       const settings: Settings = { folderTrustFeature, folderTrust };
       const config = await loadCliConfig(settings, [], 'test-session', argv);
