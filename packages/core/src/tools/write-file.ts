@@ -191,6 +191,7 @@ class WriteFileToolInvocation extends BaseToolInvocation<
     const ideClient = this.config.getIdeClient();
     const ideConfirmation =
       this.config.getIdeMode() &&
+      ideClient && // Add this check
       ideClient.getConnectionStatus().status === IDEConnectionStatus.Connected
         ? ideClient.openDiff(this.params.file_path, correctedContent)
         : undefined;

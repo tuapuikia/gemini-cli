@@ -337,7 +337,7 @@ export class Config {
     this.chatCompression = params.chatCompression;
     this.interactive = params.interactive ?? false;
     this.disableFallbackMode = !(
-      process.env.GEMINI_FALLBACK_MODE?.toLowerCase() === 'false'
+      process.env['GEMINI_FALLBACK_MODE']?.toLowerCase() === 'false'
     );
     this.trustedFolder = params.trustedFolder;
 

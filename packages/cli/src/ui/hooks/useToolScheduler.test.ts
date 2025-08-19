@@ -1103,6 +1103,7 @@ describe('mapToDisplay', () => {
       tool: toolForCall2,
       invocation: toolForCall2.build(baseRequest.args),
       liveOutput: 'markdown output',
+      retryCount: 0,
     } as ToolCall;
 
     const display = mapToDisplay([toolCall1, toolCall2]);
