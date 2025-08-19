@@ -447,12 +447,22 @@ export async function start_sandbox(
     args.push('--volume', `${os.tmpdir()}:${getContainerPath(os.tmpdir())}`);
 
     // mount gcloud config directory if it exists
-    const gcloudConfigDir = path.join(os.homedir(), '.config', 'gcloud');
-    if (fs.existsSync(gcloudConfigDir)) {
-      args.push(
-        '--volume',
-        `${gcloudConfigDir}:${getContainerPath(gcloudConfigDir)}:ro`,
-      );
+    if (
+      ['true', '1'].includes(
+        (process.env['SANDBOX_MOUNT_GCLOUD_CONFIG'] ?? 'false').toLowerCase(),
+      )
+    ) {
+      const gcloudConfigDir = path.join(os.homedir(), '.config', 'gcloud');
+      if (fs.existsSync(gcloudConfigDir)) {
+        args.push(
+          '--volume',
+          `${gcloudConfigDir}:${getContainerPath(gcloudConfigDir)}:ro`,
+        );
+      } else {
+        console.warn(
+          `WARNING: SANDBOX_MOUNT_GCLOUD_CONFIG is set, but '${gcloudConfigDir}' does not exist.`,
+        );
+      }
     }
 
     // mount docker socket if SANDBOX_MOUNT_DOCKER_SOCK is set
