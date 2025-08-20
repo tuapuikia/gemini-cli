@@ -246,6 +246,7 @@ export async function parseArguments(): Promise<CliArgs> {
             // Handle comma-separated values
             dirs.flatMap((dir) => dir.split(',').map((d) => d.trim())),
         })
+
         .check((argv) => {
           if (argv.prompt && argv['promptInteractive']) {
             throw new Error(
@@ -556,6 +557,8 @@ export async function loadCliConfig(
     folderTrust,
     interactive,
     trustedFolder,
+    shouldUseNodePtyShell: settings.shouldUseNodePtyShell,
+    skipNextSpeakerCheck: settings.skipNextSpeakerCheck,
   });
 }
 
