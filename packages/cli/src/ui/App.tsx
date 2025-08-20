@@ -1266,6 +1266,8 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
                 false
               }
               promptTokenCount={sessionStats.lastPromptTokenCount}
+              requestCount={sessionStats.promptCount}
+              geminiApiRequestCount={sessionStats.geminiApiRequestCount}
               nightly={nightly}
               vimMode={vimModeEnabled ? vimMode : undefined}
               isTrustedFolder={isTrustedFolderState}

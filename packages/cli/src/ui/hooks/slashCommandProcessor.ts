@@ -220,11 +220,14 @@ export const useSlashCommandProcessor = (
       reloadCommands();
     };
 
-    ideClient.addStatusChangeListener(listener);
+    if (ideClient) {
+      ideClient.addStatusChangeListener(listener);
 
-    return () => {
-      ideClient.removeStatusChangeListener(listener);
-    };
+      return () => {
+        ideClient.removeStatusChangeListener(listener);
+      };
+    }
+    return () => {}; // Return a no-op cleanup function if ideClient is null/undefined
   }, [config, reloadCommands]);
 
   useEffect(() => {

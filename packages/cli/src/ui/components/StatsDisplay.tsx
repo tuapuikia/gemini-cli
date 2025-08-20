@@ -10,6 +10,7 @@ import Gradient from 'ink-gradient';
 import { theme } from '../semantic-colors.js';
 import { formatDuration } from '../utils/formatters.js';
 import { useSessionStats, ModelMetrics } from '../contexts/SessionContext.js';
+import { Colors } from '../colors.js';
 
 import {
   getStatusColor,
