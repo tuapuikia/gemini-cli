@@ -1250,7 +1250,6 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
               )}
             </Box>
           )}
-<<<<<<< HEAD
           {!settings.merged.hideFooter && (
             <Footer
               model={currentModel}
