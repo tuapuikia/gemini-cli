@@ -63,6 +63,7 @@ export enum ApprovalMode {
 
 export interface AccessibilitySettings {
   disableLoadingPhrases?: boolean;
+  screenReader?: boolean;
 }
 
 export interface BugCommandSettings {
@@ -742,6 +743,10 @@ export class Config {
 
   getSkipNextSpeakerCheck(): boolean {
     return this.skipNextSpeakerCheck;
+  }
+
+  getScreenReader(): boolean {
+    return this.accessibility.screenReader ?? false;
   }
 
   getEnablePromptCompletion(): boolean {

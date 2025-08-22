@@ -33,7 +33,8 @@ const StatRow: React.FC<StatRowProps> = ({ title, children }) => (
     <Box width={28}>
       <Text color={theme.text.link}>{title}</Text>
     </Box>
-    {children}
+    {/* FIX: Wrap children in a Box that can grow to fill remaining space */}
+    <Box flexGrow={1}>{children}</Box>
   </Box>
 );
 
@@ -49,7 +50,8 @@ const SubStatRow: React.FC<SubStatRowProps> = ({ title, children }) => (
     <Box width={26}>
       <Text>» {title}</Text>
     </Box>
-    {children}
+    {/* FIX: Apply the same flexGrow fix here */}
+    <Box flexGrow={1}>{children}</Box>
   </Box>
 );
 
@@ -212,8 +214,8 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         <StatRow title="Tool Calls:">
           <Text>
             {tools.totalCalls} ({' '}
-            <Text color={theme.status.success}>✔ {tools.totalSuccess}</Text>{' '}
-            <Text color={theme.status.error}>✖ {tools.totalFail}</Text> )
+            <Text color={theme.status.success}>✓ {tools.totalSuccess}</Text>{' '}
+            <Text color={theme.status.error}>x {tools.totalFail}</Text> )
           </Text>
         </StatRow>
         <StatRow title="Success Rate:">

@@ -229,12 +229,11 @@ const createErrorResponse = (
 });
 
 interface CoreToolSchedulerOptions {
-  toolRegistry: ToolRegistry;
+  config: Config;
   outputUpdateHandler?: OutputUpdateHandler;
   onAllToolCallsComplete?: AllToolCallsCompleteHandler;
   onToolCallsUpdate?: ToolCallsUpdateHandler;
   getPreferredEditor: () => EditorType | undefined;
-  config: Config;
   maxRetries?: number;
   onEditorClose: () => void;
 }
@@ -260,7 +259,7 @@ export class CoreToolScheduler {
 
   constructor(options: CoreToolSchedulerOptions) {
     this.config = options.config;
-    this.toolRegistry = options.toolRegistry;
+    this.toolRegistry = options.config.getToolRegistry();
     this.outputUpdateHandler = options.outputUpdateHandler;
     this.onAllToolCallsComplete = options.onAllToolCallsComplete;
     this.onToolCallsUpdate = options.onToolCallsUpdate;
